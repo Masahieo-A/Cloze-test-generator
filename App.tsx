@@ -7,7 +7,6 @@ import PasscodeModal from './components/PasscodeModal';
 import ConfigModal from './components/ConfigModal';
 import TestView from './components/TestView';
 import { TextData, TestConfig } from './types';
-import './index.css';
 
 type ViewState = 'list' | 'test';
 

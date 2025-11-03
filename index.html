@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ja">
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
@@ -11,7 +11,7 @@
     <!-- This policy restricts the sources from which content (scripts, styles, etc.) can be loaded, preventing many types of injection attacks. -->
     <meta http-equiv="Content-Security-Policy" 
           content="default-src 'self'; 
-                   script-src 'self' https://cdn.tailwindcss.com https://aistudiocdn.com; 
+                   script-src 'self' https://cdn.tailwindcss.com; 
                    style-src 'self' https://cdn.tailwindcss.com 'unsafe-inline'; 
                    connect-src 'self';
                    img-src 'self' data:;
@@ -44,9 +44,11 @@
   <script type="importmap">
 {
   "imports": {
+    "react": "https://aistudiocdn.com/react@^19.2.0",
     "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
     "react/": "https://aistudiocdn.com/react@^19.2.0/",
-    "react": "https://aistudiocdn.com/react@^19.2.0"
+    "vite": "https://aistudiocdn.com/vite@^7.1.12",
+    "@vitejs/plugin-react": "https://aistudiocdn.com/@vitejs/plugin-react@^5.1.0"
   }
 }
 </script>
