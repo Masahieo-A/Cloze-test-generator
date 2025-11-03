@@ -1,0 +1,5 @@
+{
+  "name": "Cloze Test Generator",
+  "description": "An educational web application for high school students to generate and practice English cloze tests from textbook passages. Features separate admin and user views, with data saved locally.",
+  "requestFramePermissions": []
+}
