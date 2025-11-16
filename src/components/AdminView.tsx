@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+
+import React, { useState, useRef } from 'react';
 import useLocalStorage from '../hooks/useLocalStorage';
 import { Folder, TextData } from '../types';
-import { PlusIcon, TrashIcon } from './icons';
+import { PlusIcon, TrashIcon, DownloadIcon, UploadIcon } from './icons';
 
 interface AdminViewProps {
   onExit: () => void;
@@ -16,6 +17,8 @@ const AdminView: React.FC<AdminViewProps> = ({ onExit }) => {
   const [content, setContent] = useState('');
   const [translation, setTranslation] = useState('');
   const [selectedFolderId, setSelectedFolderId] = useState<string>('');
+  
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleAddFolder = (e: React.FormEvent) => {
     e.preventDefault();
@@ -53,6 +56,73 @@ const AdminView: React.FC<AdminViewProps> = ({ onExit }) => {
     if (window.confirm('このテキストを削除します。よろしいですか？')) {
       setTexts(texts.filter(t => t.id !== textId));
     }
+  };
+
+  const handleExport = () => {
+    const dataToExport = {
+      folders,
+      texts,
+    };
+    const jsonString = JSON.stringify(dataToExport, null, 2);
+    const blob = new Blob([jsonString], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `cloze-app-data-${new Date().toISOString().slice(0, 10)}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
+  const handleImportClick = () => {
+      fileInputRef.current?.click();
+  };
+
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+      const file = event.target.files?.[0];
+      if (!file) {
+        return;
+      }
+
+      if (window.confirm('現在のデータを上書きします。よろしいですか？')) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          try {
+            const text = e.target?.result;
+            if (typeof text !== 'string') {
+              throw new Error('File content is not a string.');
+            }
+            const importedData = JSON.parse(text);
+
+            if (Array.isArray(importedData.folders) && Array.isArray(importedData.texts)) {
+              setFolders(importedData.folders);
+              setTexts(importedData.texts);
+              alert('データのインポートが完了しました。');
+            } else {
+              throw new Error('Invalid data format.');
+            }
+          } catch (error) {
+            console.error('Failed to import data:', error);
+            alert('ファイルの読み込みに失敗しました。有効なJSONファイルを選択してください。');
+          } finally {
+            if (event.target) {
+              event.target.value = '';
+            }
+          }
+        };
+        reader.onerror = () => {
+          alert('ファイルの読み込み中にエラーが発生しました。');
+          if (event.target) {
+            event.target.value = '';
+          }
+        };
+        reader.readAsText(file);
+      } else {
+          if (event.target) {
+              event.target.value = '';
+          }
+      }
   };
 
   return (
@@ -132,27 +202,58 @@ const AdminView: React.FC<AdminViewProps> = ({ onExit }) => {
       </div>
       
       {/* Data List */}
-        <div className="mt-8 bg-white p-6 rounded-lg shadow-md">
-          <h3 className="text-xl font-semibold mb-4 text-gray-900">登録済みコンテンツ</h3>
-          <div className="space-y-4">
-            {folders.map(folder => (
-              <div key={folder.id}>
-                <h4 className="text-lg font-bold text-indigo-600">{folder.name}</h4>
-                <ul className="pl-4 mt-2 space-y-2">
-                  {texts.filter(t => t.folderId === folder.id).map(text => (
-                    <li key={text.id} className="flex justify-between items-center bg-gray-100 p-2 rounded">
-                      <span>{text.lesson}</span>
-                      <button onClick={() => handleDeleteText(text.id)} className="text-red-500 hover:text-red-700 p-1"><TrashIcon /></button>
-                    </li>
-                  ))}
-                   {texts.filter(t => t.folderId === folder.id).length === 0 && (
-                      <li className="text-gray-500 italic">このフォルダにはテキストがありません。</li>
-                   )}
-                </ul>
-              </div>
-            ))}
-          </div>
+      <div className="mt-8 bg-white p-6 rounded-lg shadow-md">
+        <h3 className="text-xl font-semibold mb-4 text-gray-900">登録済みコンテンツ</h3>
+        <div className="space-y-4">
+          {folders.map(folder => (
+            <div key={folder.id}>
+              <h4 className="text-lg font-bold text-indigo-600">{folder.name}</h4>
+              <ul className="pl-4 mt-2 space-y-2">
+                {texts.filter(t => t.folderId === folder.id).map(text => (
+                  <li key={text.id} className="flex justify-between items-center bg-gray-100 p-2 rounded">
+                    <span>{text.lesson}</span>
+                    <button onClick={() => handleDeleteText(text.id)} className="text-red-500 hover:text-red-700 p-1"><TrashIcon /></button>
+                  </li>
+                ))}
+                  {texts.filter(t => t.folderId === folder.id).length === 0 && (
+                    <li className="text-gray-500 italic">このフォルダにはテキストがありません。</li>
+                  )}
+              </ul>
+            </div>
+          ))}
         </div>
+      </div>
+
+      {/* Data Management */}
+      <div className="mt-8 bg-white p-6 rounded-lg shadow-md">
+        <h3 className="text-xl font-semibold mb-4 text-gray-900">データ管理</h3>
+        <div className="flex flex-col md:flex-row gap-4">
+            <button
+              onClick={handleExport}
+              className="flex items-center justify-center w-full md:w-auto bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-md transition-colors"
+            >
+              <DownloadIcon />
+              <span>データをエクスポート</span>
+            </button>
+            <button
+              onClick={handleImportClick}
+              className="flex items-center justify-center w-full md:w-auto bg-teal-600 hover:bg-teal-700 text-white font-bold py-2 px-4 rounded-md transition-colors"
+            >
+              <UploadIcon />
+              <span>データをインポート</span>
+            </button>
+            <input
+              type="file"
+              ref={fileInputRef}
+              onChange={handleFileChange}
+              className="hidden"
+              accept=".json"
+            />
+        </div>
+        <p className="text-sm text-gray-500 mt-4">
+          データをJSONファイルとしてエクスポート・インポートできます。これにより、別端末へのデータ移行やバックアップが可能です。インポートすると現在のデータは上書きされますのでご注意ください。
+        </p>
+      </div>
     </div>
   );
 };
